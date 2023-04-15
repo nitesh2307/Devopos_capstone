@@ -24,7 +24,7 @@ spec:
       containers:
         - image: nitesh2307/capstone_image1
           imagePullPolicy: Always
-          name: helloNitesh
+          name: hellonitesh
           ports:
             - containerPort: 80
 
