@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: CD_Capstone
+  name: cd-capstone
   labels:
-    app: CD_capstone
+    app: cd-capstone
   namespace: default
 spec:
   replicas: 2
   progressDeadlineSeconds: 3600
   selector:
     matchLabels:
-      app: CD_capstone
+      app: cd-capstone
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        app: CD_capstone
+        app: cd-capstone
     spec:
       containers:
         - image: nitesh2307/capstone_image1
@@ -32,13 +32,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: capstone
+  name: cd-capstone
   labels:
-    app: capstone
+    app: cd-capstone
 spec:
   type: LoadBalancer
   selector:
-    app: capstone
+    app: cd-capstone
   ports:
     - port: 80
       targetPort: 80
