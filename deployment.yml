@@ -3,14 +3,14 @@ kind: Deployment
 metadata:
   name: cd-capstone
   labels:
-    app: cd-capstone
+    app: web
   namespace: default
 spec:
   replicas: 2
   progressDeadlineSeconds: 3600
   selector:
     matchLabels:
-      app: cd-capstone
+      app: web
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -19,12 +19,12 @@ spec:
   template:
     metadata:
       labels:
-        app: cd-capstone
+        app: web
     spec:
       containers:
         - image: nitesh2307/capstone_image1
           imagePullPolicy: Always
-          name: newimage
+          name: helloNitesh
           ports:
             - containerPort: 80
 
@@ -34,11 +34,11 @@ kind: Service
 metadata:
   name: cd-capstone
   labels:
-    app: cd-capstone
+    app: web
 spec:
   type: LoadBalancer
   selector:
-    app: cd-capstone
+    app: web
   ports:
     - port: 80
       targetPort: 80
