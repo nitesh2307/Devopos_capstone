@@ -1,40 +1,144 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
-version: 2
+version: 2.1
+orbs:
+  aws-eks: circleci/aws-eks@1.0.3
+  kubernetes: circleci/kubernetes@0.11.2
+  slack: circleci/slack@4.12.1
+  aws-cli: circleci/aws-cli@2.0.3
+
+commands:
+  install_awscli:
+    description: Install AWS CLI
+    steps:
+      - run:
+          name: Install AWS CLI
+          command: |
+              sudo apt install -y tar gzip curl
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip -qq awscliv2.zip
+              sudo ./aws/install
+
+  install_aws_eks:
+    description: Install eksctl 
+    steps:
+      - run:
+          name: Install eksctl 
+          command: |
+            curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+            sudo mv /tmp/eksctl /usr/local/bin
+            eksctl version
+
+  install_kubectl:
+    description:
+    steps:
+      - run:
+          name: Install kubectl
+          command: |
+            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+            kubectl version --client
 jobs:
-  build:
+  lint-phase:
     docker:
-    # Use the same Docker base as the project
       - image: python:3.7.3-stretch
-    # working_directory: ~/repo
     steps:
       - checkout
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "requirements.txt" }}
-            # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-      
-      - run:
-          name: Project Setup
-          command: |
-            make setup
-
       - run:
           name: install dependencies
           command: |
+            python3 -m venv venv
+            . venv/bin/activate
             make install
-
+      - run:
+          name: run lint
+          command: |
+            . venv/bin/activate
+            make lint
       - save_cache:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
-          
-      # run lints
+  build-upload-image:
+    docker:
+      - image: circleci/golang:1.15
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
       - run:
-          name: run lint
+          name: Build docker image
           command: |
-            make lint
+            docker build --tag=nitesh2307/capstone_image1 .
+            docker images ls
+            docker login -u="$DOCKER_USER" -p="$DOCKER_PASSWD"
+            docker push nitesh2307/capstone_image1
+
+  create-cluster:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run:
+          name: Install tar and gzip
+          command: |
+            apk add --update tar gzip nodejs npm curl  
+      - install_awscli
+      - install_aws_eks
+      - install_kubectl
+      - run:
+          name: AWS EKS cluster creation
+          command: |
+            eksctl create cluster --name myEKSClusterCapstone --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c,us-east-1d
+            eksctl utils describe-stacks --region us-east-1 --myEKSClusterCapstone
+            eksctl get cluster --name=myEKSClusterCapstone --region=us-east-1
+            
+  deploy-cluster:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          myEKSClusterCapstone
+        type: string
+    steps:
+      - checkout
+      - kubernetes/install
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          install-kubectl: true
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: deployment.yml
+          resource-name: deployment/myEKSClusterCapstone
+  check-cluster:
+    executor: aws-eks/python3
+    parameters: 
+      cluster-name:
+        description: |
+          myEKSClusterCapstone
+        type: string
+    steps:
+      - kubernetes/install
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+      - run:
+          name: Check Cluster status
+          command: |
+            kubectl get nodes
+            kubectl get all
+workflows:
+  default:
+      jobs:
+        - lint-phase  
+        - build-upload-image:
+            requires: [lint-phase]
+        - create-cluster:
+            requires: [build-upload-image]
+        - deploy-cluster:
+            cluster-name: myEKSClusterCapstone
+            requires: [create-cluster]
+        - check-cluster:
+            cluster-name: capstone
+            requires: [deploy-cluster]
