@@ -15,7 +15,6 @@ RUN pip install --no-cache-dir --upgrade pip &&\
   #  pip install --trusted-host pypi.python.org -r requirements.txt
     pip install --no-cache-dir -r requirements.txt
 
-RUN
 ## Step 4:
 # Expose port 80
 EXPOSE 80
