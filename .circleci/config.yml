@@ -12,10 +12,10 @@ commands:
       - run:
           name: Install AWS CLI
           command: |
-              sudo apt install -y tar gzip curl
+              apt install -y tar gzip curl
               curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
               unzip -qq awscliv2.zip
-              sudo ./aws/install
+              ./aws/install
 
   install_aws_eks:
     description: Install eksctl 
