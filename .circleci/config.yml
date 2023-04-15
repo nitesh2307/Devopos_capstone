@@ -109,7 +109,7 @@ jobs:
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
           resource-file-path: deployment.yml
-          resource-name: deployment/cd-capstone
+          resource-name: deployment/capstone
   check-cluster:
     executor: aws-eks/python3
     parameters: 
