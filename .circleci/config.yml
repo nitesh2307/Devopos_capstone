@@ -90,7 +90,6 @@ jobs:
       - run:
           name: AWS EKS cluster creation
           command: |
-  #   #     eksctl create cluster --name myEKSClusterCapstone --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c,us-east-1d
             eksctl utils describe-stacks --region us-east-1 --cluster=myEKSClusterCapstone
             eksctl get cluster --name=myEKSClusterCapstone --region=us-east-1
             
