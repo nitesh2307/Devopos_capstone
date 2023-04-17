@@ -90,16 +90,16 @@ jobs:
       - run:
           name: AWS EKS cluster creation
           command: |
-            eksctl create cluster --name myEKSClusterCapstone1 --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c,us-east-1d
-            eksctl utils describe-stacks --region us-east-1 --cluster=myEKSClusterCapstone1
-            eksctl get cluster --name=myEKSClusterCapstone1 --region=us-east-1
+            eksctl create cluster --name myEKSClusterCapstone --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c,us-east-1d
+            eksctl utils describe-stacks --region us-east-1 --cluster=myEKSClusterCapstone
+            eksctl get cluster --name=myEKSClusterCapstone --region=us-east-1
             
   deploy-cluster:
     executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
-          myEKSClusterCapstone1
+          myEKSClusterCapstone
         type: string
     steps:
       - checkout
@@ -116,7 +116,7 @@ jobs:
     parameters: 
       cluster-name:
         description: |
-          myEKSClusterCapstone1
+          myEKSClusterCapstone
         type: string
     steps:
       - kubernetes/install
@@ -127,6 +127,9 @@ jobs:
           command: |
             kubectl get nodes
             kubectl get all
+            kubectl get services
+            kubectl get pods
+            
 workflows:
   default:
       jobs:
